@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Realms;
 using Realms.Sync;
 using Xamarin.Forms;
@@ -21,7 +20,6 @@ namespace RealmTasks
         #endregion
 
         private readonly Realm _realm;
-        private readonly Lazy<IADAuthenticator> _adAuthenticator = new Lazy<IADAuthenticator>(() => DependencyService.Get<IADAuthenticator>());
         private string _password;
 
         public LoginDetails Details { get; }
@@ -40,12 +38,10 @@ namespace RealmTasks
         }
 
         public Command LoginCommand { get; }
-        public Command LoginWithADCommand { get; }
 
         public LoginViewModel()
         {
             LoginCommand = new Command(Login, () => !IsBusy);
-            LoginWithADCommand = new Command(LoginWithAD, () => !IsBusy);
 
             var cacheConfig = new RealmConfiguration("logincache.realm")
             {
@@ -69,33 +65,6 @@ namespace RealmTasks
 
         private void Login()
         {
-            LoginCore(() => System.Threading.Tasks.Task.FromResult(Credentials.UsernamePassword(Details.Username, Password, false)));
-        }
-
-        private void LoginWithAD()
-        {
-            LoginCore(async () =>
-            {
-                var authContext = new AuthenticationContext(Constants.ADCredentials.CommonAuthority);
-
-                var clientId = Constants.ADCredentials.ClientId;
-                var redirectUri = Constants.ADCredentials.RedirectUri;
-                if (clientId == "your-client-id" || redirectUri.AbsolutePath == "http://your-redirect-uri")
-                {
-                    throw new Exception("Please update Constants.ADCredentials with the correct ClientId and RedirectUri for your application.");
-                }
-
-                var response = await authContext.AcquireTokenAsync("https://graph.windows.net",
-                                                                   clientId,
-                                                                   redirectUri,
-                                                                   _adAuthenticator.Value.GetPlatformParameters());
-
-                return Credentials.AzureAD(response.AccessToken);
-            });
-        }
-
-        private void LoginCore(Func<Task<Credentials>> getCredentialsFunc)
-        {
             PerformTask(async () =>
             {
                 _realm.Write(() =>
@@ -108,7 +77,7 @@ namespace RealmTasks
 
                 Constants.Server.SyncHost = Details.ServerUrl;
 
-                var credentials = await getCredentialsFunc();
+                var credentials = Credentials.UsernamePassword(Details.Username, Password, false);
                 var user = await User.LoginAsync(credentials, Constants.Server.AuthServerUri);
 
                 Success(user);
