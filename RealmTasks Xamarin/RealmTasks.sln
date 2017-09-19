@@ -1,5 +1,5 @@
 
-Microsoft Visual Studio Solution File, Format Version 15.00
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealmTasks.iOS", "iOS\RealmTasks.iOS.csproj", "{319878C6-4DA6-438A-9B6D-1C3525B1B2AC}"
 EndProject
